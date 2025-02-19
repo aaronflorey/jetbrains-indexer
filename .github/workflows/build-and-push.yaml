@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: 0 14 * * 0
 
 jobs:
   default:
@@ -11,8 +13,11 @@ jobs:
     strategy:
       matrix:
         builds:
-          - { IDE: PhpStorm, IDE_SHORT: phpstorm, IDE_CODE: webide, IDE_VERSION: 2024.3 }
-          - { IDE: PhpStorm, IDE_SHORT: phpstorm, IDE_CODE: webide, IDE_VERSION: 2024.2 }
+          - { IDE: PhpStorm, IDE_SHORT: phpstorm, IDE_CODE: webide }
+        version:
+          - 2024.3
+          - 2024.2
+          - 2024.1
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,7 +41,7 @@ jobs:
             IDE=${{ matrix.builds.IDE }}
             IDE_SHORT=${{ matrix.builds.IDE_SHORT }}
             IDE_CODE=${{ matrix.builds.IDE_CODE }}
-            IDE_VERSION=${{ matrix.builds.IDE_VERSION }}
+            IDE_VERSION=${{ matrix.version }}
           tags: |
-            ghcr.io/aaronflorey/indexer:${{ matrix.builds.IDE_SHORT }}-${{ matrix.builds.IDE_VERSION }}
+            ghcr.io/aaronflorey/indexer:${{ matrix.builds.IDE_SHORT }}-${{ matrix.version }}
           push: true
