@@ -1,23 +1,18 @@
 name: build & push
+
 on:
-  workflow_call:
-    inputs:
-      IDE:
-        required: true
-        type: string
-      IDE_SHORT:
-        required: true
-        type: string
-      IDE_CODE:
-        required: true
-        type: string
-      IDE_VERSION:
-        required: false
-        type: string
-        default: "2024.3"
+  push:
+    branches:
+      - master
+
 jobs:
   default:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        builds:
+          - { IDE: PhpStorm, IDE_SHORT: phpstorm, IDE_CODE: webide, IDE_VERSION: 2024.3 }
+          - { IDE: PhpStorm, IDE_SHORT: phpstorm, IDE_CODE: webide, IDE_VERSION: 2024.2 }
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,10 +33,10 @@ jobs:
         with:
           context: ./image
           build-args: |
-            IDE=${{ inputs.IDE }}
-            IDE_SHORT=${{ inputs.IDE_SHORT }}
-            IDE_CODE=${{ inputs.IDE_CODE }}
-            IDE_VERSION=${{ inputs.IDE_VERSION }}
+            IDE=${{ matrix.builds.IDE }}
+            IDE_SHORT=${{ matrix.builds.IDE_SHORT }}
+            IDE_CODE=${{ matrix.builds.IDE_CODE }}
+            IDE_VERSION=${{ matrix.builds.IDE_VERSION }}
           tags: |
-            ghcr.io/aaronflorey/indexer:${{ inputs.IDE_SHORT }}-${{ inputs.IDE_VERSION }}
+            ghcr.io/aaronflorey/indexer:${{ matrix.builds.IDE_SHORT }}-${{ matrix.builds.IDE_VERSION }}
           push: true
