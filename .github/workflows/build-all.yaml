@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-    paths:
-      - "image/**" # run the action when: the image has been modified
-      - ".github/workflows/**" # run the action when: the workflow has been modified
 jobs:
   build-phpstorm:
     uses: aaronflorey/jetbrains-indexer/.github/workflows/build-and-push.yaml@master
