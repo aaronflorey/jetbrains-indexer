@@ -31,7 +31,7 @@ WORKDIR /opt
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    openjdk-17-jre-headless wget unzip
+    openjdk-17-jre-headless wget unzip git
 
 # Set up folders
 RUN mkdir -p /etc/idea && \
