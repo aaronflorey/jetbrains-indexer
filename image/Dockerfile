@@ -1,13 +1,13 @@
-FROM openkbs/jdk-mvn-py3
+FROM debian:bookworm-slim
 
 # Shared indexing works best
 # when you use the IDE
 # corresponding to the language
 # your project is in
-ARG IDE=ideaIU
-ARG IDE_SHORT=idea
-ARG IDE_CODE=idea
-ARG IDE_VERSION=2021.3
+ARG IDE=PhpStorm
+ARG IDE_SHORT=phpstorm
+ARG IDE_CODE=webide
+ARG IDE_VERSION=2024.3
 
 # persist build args for runtime
 # see https://www.saltycrane.com/blog/2021/04/buildtime-vs-runtime-environment-variables-nextjs-docker/#setting-dynamic-buildtime-environment-variables-that-are-available-at-runtime-also
@@ -28,6 +28,10 @@ ENV SHARED_INDEX_BASE="/shared-index"
 
 USER root
 WORKDIR /opt
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    openjdk-17-jre-headless wget unzip
 
 # Set up folders
 RUN mkdir -p /etc/idea && \
