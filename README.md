@@ -11,56 +11,95 @@ Shared indexes are often hosted on a CDN and used by IDEs to speed up loading (i
     ```sh
     cd your-project/
 
-    docker run -it --rm \
-        -v "$(pwd)":/var/project \
-        -v "$HOME/indexes-out":/shared-index \
-        -e INDEXES_CDN_URL=http://localhost:3000/project \
+    docker run --rm \
+        -v ./:/var/myprojectname \
+        -v ./indexes:/shared-index \
+        -e IDEA_PROJECT_DIR=/var/myprojectname \
+        -e INDEXES_CDN_URL=https://my-index.s3.ap-southeast-2.amazonaws.com/myprojectname \
         ghcr.io/aaronflorey/indexer:phpstorm-2024.3
-        
-    # you may need to fix the file permissions for the generated indexes
-    sudo chown -R $(id -u):$(id -g) $HOME/indexes-out
     ```
 
-1.  Upload indexes to CDN (or test locally)
+2.  Upload indexes to CDN (or test locally)
 
     ```sh
-    # test with local Python server
-    cd $HOME/indexes-out/
-    python3 -m http.server 3000
+    aws s3 sync "./indexes/server/" s3://my-index/myprojectname/ --delete
     ```
 
     > this URL must be the same as INDEXES_CDN_URL in step 1.
 
-1.  Add `intellij.yaml` to your project if you don't have one
+3.  Add `intellij.yaml` to your project if you don't have one
 
     ```yaml
     sharedIndex:
-      project:
-        - url: http://localhost:3000/project
+        project:
+            - url: https://my-index.s3.ap-southeast-2.amazonaws.com/myprojectname/project/myprojectname
+        consents:
+            - kind: project
+            decision: allowed
     ```
 
-1.  Open your IDE and test (use `File → Invalidate Caches` to load indexes for the first time again)
+4.  Open your IDE and test (use `File → Invalidate Caches` to load indexes for the first time again)
 
 ## IDE support
 
-By default, this project indexes version 2021.3 of your IDE. Specify the IDE name by using the appropriate tag (e.g `aaronflorey/indexer:[ide-name]-2021.3`). You can verify with [DockerHub](https://hub.docker.com/r/aaronflorey/indexer/tags).
+By default, this project indexes version 2024.3 of your IDE. Specify the IDE name by using the appropriate tag (e.g `aaronflorey/indexer:[ide-name]-2024.3`). 
 
-If an IDE/version is not on DockerHub, we recommend you manually pulling and building the image yourself using [these build arguments](https://github.com/bpmct/jetbrains-indexer/blob/master/image/Dockerfile#L3-L9).
+If an IDE/version is not on DockerHub, we recommend you manually pulling and building the image yourself using [these build arguments](https://github.com/aaronflorey/jetbrains-indexer/blob/master/image/Dockerfile#L3-L9).
 
-## Docs and examples
+## Example Github Actions
 
-> ⚠️ Many of these are a work in progress
+This can be used to setup your project, generate indexes, and upload to s3 every night at midnight.
 
-- [Test a project with shared indexes locally](./docs/filesystem.md)
-- [Generate shared indexes for Coder workspaces](./docs/coder.md)
-- [Generate shared indexes and host on a CDN](./docs/cdn.md)
-- [Generate shared indexes regularly during CI (GitHub Actions)](./docs/ci.md)
-- [Troubleshooting shared indexes](./docs/troubleshooting.md)
+```yaml
+name: Indexes
 
-## Troubleshooting
+on:
+  schedule:
+    - cron: '0 14 * * *'
 
-See [./docs/troubleshooting.md](./docs/troubleshooting.md)
+concurrency:
+  group: indexes
+  cancel-in-progress: true
 
----
+jobs:
+  indexes:
+    name: Generate Indexes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: staging
 
-If you just want to generate raw shared indexes with Docker, you can use [damintsew/idea-shared-index-dockerfile](https://github.com/damintsew/idea-shared-index-dockerfile). This project is based on that.
+     - name: Setup PHP
+       uses: shivammathur/setup-php@v2
+       with:
+         php-version: 8.4
+         tools: composer:v2
+
+     - uses: ramsey/composer-install@v3
+
+     - uses: actions/setup-node@v4
+       with:
+         cache: npm
+         node-version: 22
+
+     - name: Install NPM packages
+       run: npm ci --prefer-offline --no-audit
+
+      - name: run tool
+        run: |
+          docker run --rm \
+            -v ./:/var/myprojectname \
+            -v ./indexes:/shared-index \
+            -e IDEA_PROJECT_DIR=/var/myprojectname \
+            -e INDEXES_CDN_URL=https://my-indexes.s3.ap-southeast-2.amazonaws.com/myprojectname \
+            ghcr.io/aaronflorey/indexer:phpstorm-2024.3
+
+      - name: Upload
+        run: aws s3 sync "./indexes/server/" s3://my-indexes/myprojectname/ --delete
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.INDEXES_AWS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.INDEXES_AWS_SECRET }}
+          AWS_DEFAULT_REGION: ap-southeast-2
+```

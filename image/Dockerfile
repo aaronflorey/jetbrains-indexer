@@ -17,7 +17,7 @@ ENV IDE_CODE=$IDE_CODE
 ENV IDE_VERSION=$IDE_VERSION
 
 ARG IDE_TAR=${IDE}-${IDE_VERSION}.tar.gz
-ARG CDN_LAYOUT_TOOL_VERSION=0.9.14
+ARG INDEX_TOOL_VERSION=0.9.14
 
 # Runtime variables
 ENV INDEXES_CDN_URL=http://localhost:3000/project
@@ -54,12 +54,11 @@ RUN wget -nv https://download-cf.jetbrains.com/${IDE_CODE}/${IDE_TAR} && \
     chmod -R 777 ${SHARED_INDEX_BASE} && \
     chmod -R 777 /etc/idea
 
-# Install cdn-layout-tool
-RUN wget https://packages.jetbrains.team/maven/p/ij/intellij-shared-indexes-public/com/jetbrains/intellij/indexing/shared/cdn-layout-tool/${CDN_LAYOUT_TOOL_VERSION}/cdn-layout-tool-${CDN_LAYOUT_TOOL_VERSION}.zip -O cdn-layout-tool.zip && \
-    unzip cdn-layout-tool.zip && \
-    rm cdn-layout-tool.zip && \
-    mv cdn-layout-tool-${CDN_LAYOUT_TOOL_VERSION} cdn-layout-tool
-
+# Install index-tool
+RUN wget https://packages.jetbrains.team/maven/p/ij/intellij-shared-indexes/com/jetbrains/intellij/indexing/shared/ij-shared-indexes-tool-cli/${INDEX_TOOL_VERSION}/ij-shared-indexes-tool-cli-${INDEX_TOOL_VERSION}.zip -O ij-shared-indexes-tool-cli.zip && \
+    unzip ij-shared-indexes-tool-cli.zip && \
+    rm ij-shared-indexes-tool-cli.zip && \
+    mv ij-shared-indexes-tool-cli-${INDEX_TOOL_VERSION} index-tool 
 
 COPY entrypoint.sh entrypoint.sh
 CMD ./entrypoint.sh
